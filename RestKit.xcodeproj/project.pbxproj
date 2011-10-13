@@ -2461,10 +2461,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 258F8500141061C3007AABCD /* PortableStaticLibrary.xcconfig */;
 			buildSettings = {
-				ARCHS = (
-					armv6,
-					armv7,
-				);
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				"ARCHS[sdk=macosx*]" = "$(ARCHS_STANDARD_32_64_BIT)";
 				BUILD_STYLE = Debug;
 				GCC_C_LANGUAGE_STANDARD = c99;
@@ -2485,10 +2482,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 258F8500141061C3007AABCD /* PortableStaticLibrary.xcconfig */;
 			buildSettings = {
-				ARCHS = (
-					armv6,
-					armv7,
-				);
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				"ARCHS[sdk=macosx*]" = "$(ARCHS_STANDARD_32_64_BIT)";
 				BUILD_STYLE = Release;
 				GCC_C_LANGUAGE_STANDARD = c99;
@@ -2631,10 +2625,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 258F8500141061C3007AABCD /* PortableStaticLibrary.xcconfig */;
 			buildSettings = {
-				ARCHS = (
-					armv6,
-					armv7,
-				);
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				"ARCHS[sdk=macosx*]" = "$(ARCHS_STANDARD_32_64_BIT)";
 				BUILD_STYLE = Release;
 				GCC_C_LANGUAGE_STANDARD = c99;
@@ -2960,10 +2951,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 258F8500141061C3007AABCD /* PortableStaticLibrary.xcconfig */;
 			buildSettings = {
-				ARCHS = (
-					armv6,
-					armv7,
-				);
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				"ARCHS[sdk=macosx*]" = "$(ARCHS_STANDARD_32_64_BIT)";
 				BUILD_STYLE = Release;
 				GCC_C_LANGUAGE_STANDARD = c99;
