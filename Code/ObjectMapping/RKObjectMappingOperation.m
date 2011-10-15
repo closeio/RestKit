@@ -156,8 +156,11 @@ BOOL RKObjectIsValueEqualToValue(id sourceValue, id destinationValue) {
             return [(NSSet*)value allObjects];
         }
     } else if ([sourceType isSubclassOfClass:[NSArray class]]) {
-        // Array -> Set
-        if ([destinationType isSubclassOfClass:[NSSet class]]) {
+        if ([destinationType isSubclassOfClass:[NSOrderedSet class]]) {
+            // Array -> OrderedSet
+            return [NSOrderedSet orderedSetWithArray:value];
+        } else if ([destinationType isSubclassOfClass:[NSSet class]]) {
+            // Array -> Set
             return [NSSet setWithArray:value];
         }
     } else if ([sourceType isSubclassOfClass:[NSNumber class]] && [destinationType isSubclassOfClass:[NSDate class]]) {
