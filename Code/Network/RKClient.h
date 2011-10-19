@@ -553,6 +553,14 @@ NSString* RKPathAppendQueryParams(NSString* resourcePath, NSDictionary* queryPar
  */
 - (RKRequest *)post:(NSString *)resourcePath params:(NSObject<RKRequestSerializable> *)params delegate:(NSObject<RKRequestDelegate> *)delegate;
 
+
+- (RKRequest *)post:(NSString *)resourcePath params:(NSObject<RKRequestSerializable> *)params shouldSelfRefer:(BOOL)shouldSelfRefer delegate:(id)delegate;
+
+
+
+
+
+
 /**
  * Update a resource via an HTTP PUT
  *
@@ -572,5 +580,9 @@ NSString* RKPathAppendQueryParams(NSString* resourcePath, NSDictionary* queryPar
  * @return The RKRequest object built and sent to the remote system
  */
 - (RKRequest *)delete:(NSString*)resourcePath delegate:(NSObject<RKRequestDelegate> *)delegate;
+
+
+
+- (RKRequest *)load:(NSString *)resourcePath method:(RKRequestMethod)method params:(NSObject<RKRequestSerializable> *)params shouldSelfRefer:(BOOL)shouldSelfRefer delegate:(id)delegate;
 
 @end

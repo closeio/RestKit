@@ -193,14 +193,25 @@ NSString * RKPathAppendQueryParams(NSString *resourcePath, NSDictionary *queryPa
 }
 
 - (NSURL *)URLForResourcePath:(NSString *)resourcePath {
+    if ([resourcePath rangeOfString:@"https://"].location == 0 ) {
+        return [NSURL URLWithString:resourcePath];
+    }
+
 	return [RKURL URLWithBaseURLString:self.baseURL resourcePath:resourcePath];
 }
 
 - (NSString *)URLPathForResourcePath:(NSString *)resourcePath {
+    if ([resourcePath rangeOfString:@"https://"].location == 0 ) {
+        return resourcePath;
+    }
+
 	return [[self URLForResourcePath:resourcePath] absoluteString];
 }
 
 - (NSURL *)URLForResourcePath:(NSString *)resourcePath queryParams:(NSDictionary *)queryParams {
+    if ([resourcePath rangeOfString:@"https://"].location == 0 ) {
+        return [RKURL URLWithBaseURLString:resourcePath resourcePath:@"" queryParams:queryParams];
+    }
 	return [RKURL URLWithBaseURLString:self.baseURL resourcePath:resourcePath queryParams:queryParams];
 }
 
@@ -303,6 +314,12 @@ NSString * RKPathAppendQueryParams(NSString *resourcePath, NSDictionary *queryPa
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 - (RKRequest *)load:(NSString *)resourcePath method:(RKRequestMethod)method params:(NSObject<RKRequestSerializable> *)params delegate:(id)delegate {
+
+    return [self load:resourcePath method:method params:params shouldSelfRefer:NO delegate:delegate];
+    
+}
+
+- (RKRequest *)load:(NSString *)resourcePath method:(RKRequestMethod)method params:(NSObject<RKRequestSerializable> *)params shouldSelfRefer:(BOOL)shouldSelfRefer delegate:(id)delegate {
 	NSURL* resourcePathURL = nil;
 	if (method == RKRequestMethodGET) {
 		resourcePathURL = [self URLForResourcePath:resourcePath queryParams:(NSDictionary*)params];
@@ -313,14 +330,20 @@ NSString * RKPathAppendQueryParams(NSString *resourcePath, NSDictionary *queryPa
 	[self setupRequest:request];
 	[request autorelease];
 	request.method = method;
+    if (shouldSelfRefer) {
+        [request setAdditionalHTTPHeaders:[NSDictionary dictionaryWithObject:[resourcePathURL absoluteString] forKey:@"Referer"]];
+    }
 	if (method != RKRequestMethodGET) {
 		request.params = params;
 	}
     
     [request send];
-
+    
 	return request;
 }
+
+
+
 
 - (RKRequest *)get:(NSString *)resourcePath delegate:(id)delegate {
 	return [self load:resourcePath method:RKRequestMethodGET params:nil delegate:delegate];
@@ -332,6 +355,10 @@ NSString * RKPathAppendQueryParams(NSString *resourcePath, NSDictionary *queryPa
 
 - (RKRequest *)post:(NSString *)resourcePath params:(NSObject<RKRequestSerializable> *)params delegate:(id)delegate {
 	return [self load:resourcePath method:RKRequestMethodPOST params:params delegate:delegate];
+}
+
+- (RKRequest *)post:(NSString *)resourcePath params:(NSObject<RKRequestSerializable> *)params shouldSelfRefer:(BOOL)shouldSelfRefer delegate:(id)delegate {
+	return [self load:resourcePath method:RKRequestMethodPOST params:params shouldSelfRefer:shouldSelfRefer delegate:delegate];
 }
 
 - (RKRequest *)put:(NSString *)resourcePath params:(NSObject<RKRequestSerializable> *)params delegate:(id)delegate {
