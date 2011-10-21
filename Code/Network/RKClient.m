@@ -193,7 +193,7 @@ NSString * RKPathAppendQueryParams(NSString *resourcePath, NSDictionary *queryPa
 }
 
 - (NSURL *)URLForResourcePath:(NSString *)resourcePath {
-    if ([resourcePath rangeOfString:@"https://"].location == 0 ) {
+    if ([resourcePath hasPrefix:@"http://"] || [resourcePath hasPrefix:@"https://"]) {
         return [NSURL URLWithString:resourcePath];
     }
 
@@ -201,7 +201,7 @@ NSString * RKPathAppendQueryParams(NSString *resourcePath, NSDictionary *queryPa
 }
 
 - (NSString *)URLPathForResourcePath:(NSString *)resourcePath {
-    if ([resourcePath rangeOfString:@"https://"].location == 0 ) {
+    if ([resourcePath hasPrefix:@"http://"] || [resourcePath hasPrefix:@"https://"]) {
         return resourcePath;
     }
 
@@ -209,8 +209,9 @@ NSString * RKPathAppendQueryParams(NSString *resourcePath, NSDictionary *queryPa
 }
 
 - (NSURL *)URLForResourcePath:(NSString *)resourcePath queryParams:(NSDictionary *)queryParams {
-    if ([resourcePath rangeOfString:@"https://"].location == 0 ) {
-        return [RKURL URLWithBaseURLString:resourcePath resourcePath:@"" queryParams:queryParams];
+    if ([resourcePath hasPrefix:@"http://"] || [resourcePath hasPrefix:@"https://"]) {
+        //return [RKURL URLWithBaseURLString:resourcePath resourcePath:@"" queryParams:queryParams];
+        return [NSURL URLWithString:resourcePath];
     }
 	return [RKURL URLWithBaseURLString:self.baseURL resourcePath:resourcePath queryParams:queryParams];
 }
@@ -330,6 +331,7 @@ NSString * RKPathAppendQueryParams(NSString *resourcePath, NSDictionary *queryPa
 	[self setupRequest:request];
 	[request autorelease];
 	request.method = method;
+    
     if (shouldSelfRefer) {
         [request setAdditionalHTTPHeaders:[NSDictionary dictionaryWithObject:[resourcePathURL absoluteString] forKey:@"Referer"]];
     }
