@@ -325,7 +325,7 @@
     // HACK
     NSString *csrfToken = [[[NSApp delegate] loginController] csrfToken];
     if (csrfToken) {
-        [self setAdditionalHTTPHeaders:[NSDictionary dictionaryWithKeysAndObjects:@"Referer", [self resourcePath], @"X-CSRFToken", csrfToken, nil]];
+        [self setAdditionalHTTPHeaders:[NSDictionary dictionaryWithKeysAndObjects:@"Referer", [[self URL] absoluteString], @"X-CSRFToken", csrfToken, nil]];
     }
 
     if (self.queue) {
