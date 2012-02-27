@@ -22,23 +22,28 @@
 #import "RKResponse.h"
 #import "NSDictionary+RKRequestSerialization.h"
 #import "RKNotifications.h"
-#import "RKClient.h"
-#import "../Support/Support.h"
+#import "Support.h"
 #import "RKURL.h"
 #import "NSData+MD5.h"
 #import "NSString+MD5.h"
 #import "RKLog.h"
 #import "RKRequestCache.h"
-#import "TDOAuth.h"
+#import "GCOAuth.h"
 #import "NSURL+RestKit.h"
+<<<<<<< HEAD
 #import <Cocoa/Cocoa.h> // HACK
+=======
+#import "RKReachabilityObserver.h"
+#import "RKRequestQueue.h"
+#import "RKParams.h"
+>>>>>>> 8d0d9fcd59412b160ea22297e988b16b7e8bc0a3
 
 // Set Logging Component
 #undef RKLogComponent
 #define RKLogComponent lcl_cRestKitNetwork
 
 @implementation RKRequest
-@class TDOAuth;
+@class GCOAuth;
 
 @synthesize URL = _URL;
 @synthesize URLRequest = _URLRequest;
@@ -60,6 +65,8 @@
 @synthesize OAuth2AccessToken = _OAuth2AccessToken;
 @synthesize OAuth2RefreshToken = _OAuth2RefreshToken;
 @synthesize queue = _queue;
+@synthesize timeoutInterval = _timeoutInterval;
+@synthesize reachabilityObserver = _reachabilityObserver;
 
 #if TARGET_OS_IPHONE
 @synthesize backgroundPolicy = _backgroundPolicy, backgroundTaskIdentifier = _backgroundTaskIdentifier;
@@ -77,6 +84,7 @@
         _authenticationType = RKRequestAuthenticationTypeNone;
 		_cachePolicy = RKRequestCachePolicyDefault;
         _cacheTimeoutInterval = 0;
+        _timeoutInterval = 120.0;
 	}
 	return self;
 }
@@ -136,25 +144,25 @@
 
 - (void)dealloc {    
     [[NSNotificationCenter defaultCenter] removeObserver:self];
-    
-  	self.delegate = nil;
-  	[_connection cancel];
-  	[_connection release];
-  	_connection = nil;
-  	[_userData release];
-  	_userData = nil;
-  	[_URL release];
-  	_URL = nil;
-  	[_URLRequest release];
-  	_URLRequest = nil;
-  	[_params release];
-  	_params = nil;    
-  	[_additionalHTTPHeaders release];
-  	_additionalHTTPHeaders = nil;
-  	[_username release];
-  	_username = nil;
-  	[_password release];
-  	_password = nil;
+
+    self.delegate = nil;
+    [_connection cancel];
+    [_connection release];
+    _connection = nil;
+    [_userData release];
+    _userData = nil;
+    [_URL release];
+    _URL = nil;
+    [_URLRequest release];
+    _URLRequest = nil;
+    [_params release];
+    _params = nil;
+    [_additionalHTTPHeaders release];
+    _additionalHTTPHeaders = nil;
+    [_username release];
+    _username = nil;
+    [_password release];
+    _password = nil;
     [_cache release];
     _cache = nil;    
     [_OAuth1ConsumerKey release];
@@ -169,6 +177,9 @@
     _OAuth2AccessToken = nil;
     [_OAuth2RefreshToken release];
     _OAuth2RefreshToken = nil;
+    [self invalidateTimeoutTimer];
+    [_timeoutTimer release];
+    _timeoutTimer = nil;
     
     // Cleanup a background task if there is any
     [self cleanupBackgroundTask];
@@ -230,27 +241,58 @@
     }
     
     // Add authentication headers so we don't have to deal with an extra cycle for each message requiring basic auth.
-    if (self.authenticationType == RKRequestAuthenticationTypeHTTPBasic) {        
+    if (self.authenticationType == RKRequestAuthenticationTypeHTTPBasic && _username && _password) {
         CFHTTPMessageRef dummyRequest = CFHTTPMessageCreateRequest(kCFAllocatorDefault, (CFStringRef)[self HTTPMethod], (CFURLRef)[self URL], kCFHTTPVersion1_1);
-        
-        CFHTTPMessageAddAuthentication(dummyRequest, nil, (CFStringRef)_username, (CFStringRef)_password,kCFHTTPAuthenticationSchemeBasic, FALSE);
-        CFStringRef authorizationString = CFHTTPMessageCopyHeaderFieldValue(dummyRequest, CFSTR("Authorization"));
-        [_URLRequest setValue:(NSString *)authorizationString forHTTPHeaderField:@"Authorization"];
-        CFRelease(dummyRequest);
-        CFRelease(authorizationString);
+        if (dummyRequest) {
+          CFHTTPMessageAddAuthentication(dummyRequest, nil, (CFStringRef)_username, (CFStringRef)_password,kCFHTTPAuthenticationSchemeBasic, FALSE);
+          CFStringRef authorizationString = CFHTTPMessageCopyHeaderFieldValue(dummyRequest, CFSTR("Authorization"));
+          if (authorizationString) {
+            [_URLRequest setValue:(NSString *)authorizationString forHTTPHeaderField:@"Authorization"];
+            CFRelease(authorizationString);
+          }
+          CFRelease(dummyRequest);
+        }
     }
     
     // Add OAuth headers if is need it
     // OAuth 1
     if(self.authenticationType == RKRequestAuthenticationTypeOAuth1){        
-        NSURLRequest *echo = [TDOAuth URLRequestForPath:[_URL path]
-                                          GETParameters:[_URL queryDictionary]
-                                                 scheme:[_URL scheme]
-                                                   host:[_URL host]
-                                            consumerKey:self.OAuth1ConsumerKey
-                                         consumerSecret:self.OAuth1ConsumerSecret
-                                            accessToken:self.OAuth1AccessToken
-                                            tokenSecret:self.OAuth1AccessTokenSecret];
+        NSURLRequest *echo = nil;
+        
+        // use the suitable parameters dict
+        NSDictionary *parameters = nil;
+        if ([self.params isKindOfClass:[RKParams class]])
+            parameters = [(RKParams *)self.params dictionaryOfPlainTextParams];
+        else 
+            parameters = [_URL queryDictionary];
+            
+        if (self.method == RKRequestMethodPUT)
+            echo = [GCOAuth URLRequestForPath:[_URL path]
+                                PUTParameters:parameters
+                                       scheme:[_URL scheme]
+                                         host:[_URL host]
+                                  consumerKey:self.OAuth1ConsumerKey
+                               consumerSecret:self.OAuth1ConsumerSecret
+                                  accessToken:self.OAuth1AccessToken
+                                  tokenSecret:self.OAuth1AccessTokenSecret];
+        else if (self.method == RKRequestMethodPOST)
+            echo = [GCOAuth URLRequestForPath:[_URL path]
+                               POSTParameters:parameters
+                                       scheme:[_URL scheme]
+                                         host:[_URL host]
+                                  consumerKey:self.OAuth1ConsumerKey
+                               consumerSecret:self.OAuth1ConsumerSecret
+                                  accessToken:self.OAuth1AccessToken
+                                  tokenSecret:self.OAuth1AccessTokenSecret];
+        else
+            echo = [GCOAuth URLRequestForPath:[_URL path]
+                                GETParameters:[_URL queryDictionary]
+                                       scheme:[_URL scheme]
+                                         host:[_URL host]
+                                  consumerKey:self.OAuth1ConsumerKey
+                               consumerSecret:self.OAuth1ConsumerSecret
+                                  accessToken:self.OAuth1AccessToken
+                                  tokenSecret:self.OAuth1AccessTokenSecret];
         [_URLRequest setValue:[echo valueForHTTPHeaderField:@"Authorization"] forHTTPHeaderField:@"Authorization"];
         [_URLRequest setValue:[echo valueForHTTPHeaderField:@"Accept-Encoding"] forHTTPHeaderField:@"Accept-Encoding"];
         [_URLRequest setValue:[echo valueForHTTPHeaderField:@"User-Agent"] forHTTPHeaderField:@"User-Agent"];
@@ -287,6 +329,7 @@
 	[_connection cancel];
 	[_connection release];
 	_connection = nil;
+    [self invalidateTimeoutTimer];
 	_isLoading = NO;
     
     if (informDelegate && [_delegate respondsToSelector:@selector(requestDidCancelLoad:)]) {
@@ -375,7 +418,11 @@
 }
 
 - (BOOL)shouldDispatchRequest {
-    return [RKClient sharedClient] == nil || [[RKClient sharedClient] isNetworkAvailable];
+    if (nil == self.reachabilityObserver || NO == [self.reachabilityObserver isReachabilityDetermined]) {
+        return YES;
+    }
+    
+    return [self.reachabilityObserver isNetworkReachable];
 }
 
 - (void)sendAsynchronously {
@@ -386,6 +433,7 @@
         _isLoading = YES;
         [self didFinishLoad:response];
     } else if ([self shouldDispatchRequest]) {
+        [self createTimeoutTimer];
 #if TARGET_OS_IPHONE
         // Background Request Policy support
         UIApplication* app = [UIApplication sharedApplication];
@@ -431,7 +479,7 @@
 			[self didFinishLoad:[self loadResponseFromCache]];
 
 		} else {
-            RKLogCritical(@"SharedClient = %@ and network availability = %d", [RKClient sharedClient], [[RKClient sharedClient] isNetworkAvailable]);
+            RKLogError(@"Failed to send request to %@ due to unreachable network. Reachability observer = %@", [[self URL] absoluteString], self.reachabilityObserver);
             NSString* errorMessage = [NSString stringWithFormat:@"The client is unable to contact the resource at %@", [[self URL] absoluteString]];
     		NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:
     								  errorMessage, NSLocalizedDescriptionKey,
@@ -455,11 +503,13 @@
         _isLoading = YES;
         [self didFinishLoad:response];
     } else if ([self shouldDispatchRequest]) {
-      RKLogDebug(@"Sending synchronous %@ request to URL %@.", [self HTTPMethod], [[self URL] absoluteString]);
-		  if (![self prepareURLRequest]) {
-      // TODO: Logging
-        return nil;
-      }
+        RKLogDebug(@"Sending synchronous %@ request to URL %@.", [self HTTPMethod], [[self URL] absoluteString]);
+        [self createTimeoutTimer];
+        
+        if (![self prepareURLRequest]) {
+            // TODO: Logging
+            return nil;
+        }
 
 		[[NSNotificationCenter defaultCenter] postNotificationName:RKRequestSentNotification object:self userInfo:nil];
 
@@ -503,6 +553,26 @@
     [self cancelAndInformDelegate:YES];
 }
 
+- (void)createTimeoutTimer {
+    _timeoutTimer = [NSTimer scheduledTimerWithTimeInterval:self.timeoutInterval target:self selector:@selector(timeout) userInfo:nil repeats:NO];
+}
+
+- (void)timeout {
+    [self cancelAndInformDelegate:NO];
+    RKLogError(@"Failed to send request to %@ due to connection timeout. Timeout interval = %f", [[self URL] absoluteString], self.timeoutInterval);
+    NSString* errorMessage = [NSString stringWithFormat:@"The client timed out connecting to the resource at %@", [[self URL] absoluteString]];
+    NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:
+                              errorMessage, NSLocalizedDescriptionKey,
+                              nil];
+    NSError* error = [NSError errorWithDomain:RKRestKitErrorDomain code:RKRequestConnectionTimeoutError userInfo:userInfo];
+    [self didFailLoadWithError:error];
+}
+
+- (void)invalidateTimeoutTimer {
+    [_timeoutTimer invalidate];
+    _timeoutTimer = nil;
+}
+
 - (void)didFailLoadWithError:(NSError*)error {
 	if (_cachePolicy & RKRequestCachePolicyLoadOnError &&
 		[self.cache hasResponseForRequest:self]) {
@@ -532,8 +602,8 @@
   	_isLoading = NO;
   	_isLoaded = YES;
     
-    RKLogInfo(@"Status Code: %d", [response statusCode]);
-    RKLogInfo(@"Body: %@", [response bodyAsString]);
+    RKLogInfo(@"Status Code: %ld", (long) [response statusCode]);
+    RKLogDebug(@"Body: %@", [response bodyAsString]);
 
 	RKResponse* finalResponse = response;
 

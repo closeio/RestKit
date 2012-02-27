@@ -19,7 +19,7 @@
 //
 
 #import "RKParams.h"
-#import "../Support/RKLog.h"
+#import "RKLog.h"
 #import "NSString+MD5.h"
 
 // Need for iOS 5 UIDevice workaround
@@ -87,6 +87,14 @@ NSString* const kRKStringBoundary = @"0xKhTmLbOuNdArY";
 	[attachment release];
 	
 	return attachment;
+}
+
+- (NSDictionary *)dictionaryOfPlainTextParams {
+    NSMutableDictionary *result = [NSMutableDictionary dictionary];
+    for (RKParamsAttachment *attachment in _attachments)
+        if (attachment.value)   // if the value exist, it is plain text param
+            [result setValue:attachment.value forKey:attachment.name];
+    return [NSDictionary dictionaryWithDictionary:result];
 }
 
 - (RKParamsAttachment *)setFile:(NSString *)filePath forParam:(NSString *)param {
@@ -224,6 +232,7 @@ NSString* const kRKStringBoundary = @"0xKhTmLbOuNdArY";
         
         RKLogTrace(@"RKParams stream closed. Releasing self.");        
         
+#if TARGET_OS_IPHONE
         // NOTE: When we are assigned to the URL request, we get
         // retained. We release ourselves here to ensure the retain
         // count will hit zero after upload is complete.
@@ -232,7 +241,12 @@ NSString* const kRKStringBoundary = @"0xKhTmLbOuNdArY";
         // the problem can be analyzed in more detail
         //if ([[[UIDevice currentDevice] systemVersion] compare:@"5.0" options:NSNumericSearch] == NSOrderedAscending) {
             [self release];
+<<<<<<< HEAD
         //}
+=======
+        }
+#endif
+>>>>>>> 8d0d9fcd59412b160ea22297e988b16b7e8bc0a3
     }
 }
 
