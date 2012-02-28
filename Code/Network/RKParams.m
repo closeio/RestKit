@@ -239,14 +239,10 @@ NSString* const kRKStringBoundary = @"0xKhTmLbOuNdArY";
         //
         // This behavior does not seem to happen on iOS 5. This is a workaround until
         // the problem can be analyzed in more detail
-        //if ([[[UIDevice currentDevice] systemVersion] compare:@"5.0" options:NSNumericSearch] == NSOrderedAscending) {
+        if ([[[UIDevice currentDevice] systemVersion] compare:@"5.0" options:NSNumericSearch] == NSOrderedAscending) {
             [self release];
-<<<<<<< HEAD
-        //}
-=======
         }
 #endif
->>>>>>> 8d0d9fcd59412b160ea22297e988b16b7e8bc0a3
     }
 }
 

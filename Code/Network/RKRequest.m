@@ -30,13 +30,9 @@
 #import "RKRequestCache.h"
 #import "GCOAuth.h"
 #import "NSURL+RestKit.h"
-<<<<<<< HEAD
-#import <Cocoa/Cocoa.h> // HACK
-=======
 #import "RKReachabilityObserver.h"
 #import "RKRequestQueue.h"
 #import "RKParams.h"
->>>>>>> 8d0d9fcd59412b160ea22297e988b16b7e8bc0a3
 
 // Set Logging Component
 #undef RKLogComponent
@@ -364,12 +360,6 @@
 // We could factor the knowledge about the queue out of RKRequest entirely, but it will break behavior.
 - (void)send {
     NSAssert(NO == _isLoading || NO == _isLoaded, @"Cannot send a request that is loading or loaded without resetting it first.");
-    
-    // HACK
-    NSString *csrfToken = [[[NSApp delegate] loginController] csrfToken];
-    if (csrfToken) {
-        [self setAdditionalHTTPHeaders:[NSDictionary dictionaryWithKeysAndObjects:@"Referer", [[self URL] absoluteString], @"X-CSRFToken", csrfToken, nil]];
-    }
 
     if (self.queue) {
         [self.queue addRequest:self];

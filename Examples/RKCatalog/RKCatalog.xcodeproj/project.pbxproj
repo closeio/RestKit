@@ -403,7 +403,7 @@
 		25A34203147C4C300009758D /* RestKit.framework */ = {
 			isa = PBXReferenceProxy;
 			fileType = wrapper.framework;
-			path = RestKit.framework;
+			path = .framework;
 			remoteRef = 25A34202147C4C300009758D /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
