@@ -323,7 +323,7 @@
     NSAssert(NO == _isLoading || NO == _isLoaded, @"Cannot send a request that is loading or loaded without resetting it first.");
     
     // HACK
-    NSString *csrfToken = [[[NSApp delegate] loginController] csrfToken];
+    NSString *csrfToken = [[[NSApp delegate] loginController] csrfTokenForURL:[self URL]];
     if (csrfToken) {
         [self setAdditionalHTTPHeaders:[NSDictionary dictionaryWithKeysAndObjects:@"Referer", [[self URL] absoluteString], @"X-CSRFToken", csrfToken, nil]];
     }
